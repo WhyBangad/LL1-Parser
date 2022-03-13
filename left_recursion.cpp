@@ -7,7 +7,7 @@
 
 using namespace std;
 
-void remove_left_recursion(vector<pair<char, string>> grammar)
+vector<pair<char, string>> remove_left_recursion(vector<pair<char, string>> grammar)
 {
     vector<pair<char, string>> vec_new;
     set<char> done;
@@ -86,8 +86,9 @@ void remove_left_recursion(vector<pair<char, string>> grammar)
         std::cout << "First: " << iter->first << ", Second: " << iter->second << std::endl;
     }
 
-    for (auto it = done.begin(); it != done.end(); ++it)
-        cout << ' ' << *it;
+    // for (auto it = done.begin(); it != done.end(); ++it)
+    //     cout << ' ' << *it;
+    return vec_new;
 }
 
 int main()
@@ -103,7 +104,10 @@ int main()
     //               << ", Second: " << iter->second << std::endl;
     // }
 
-    remove_left_recursion(vec);
+    auto res = remove_left_recursion(vec);
+    for(auto &&p : res){
+        cout << p.first << " -> " << p.second << endl;
+    }
 
     return 0;
 }
