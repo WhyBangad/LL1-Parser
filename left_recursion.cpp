@@ -37,6 +37,7 @@ vector<pair<char, string>> remove_left_recursion(vector<pair<char, string>> gram
 
         int flag2 = 0;
         int j = 0;
+        int flag3 = 0;
         for (std::vector<pair<char, string>>::const_iterator iter = grammar.begin(); iter != grammar.end(); ++iter)
         {
             // std::cout << "First: " << iter->first << ", Second: " << iter->second << std::endl;
@@ -48,6 +49,9 @@ vector<pair<char, string>> remove_left_recursion(vector<pair<char, string>> gram
                     // cout << 'X' << iter->second.substr(1, iter->second.size() - 1) + 'X' << endl;
                     // grammar.erase(grammar.begin() + index);
                     // erase the original rule
+                    if (flag3 == 0)
+                        vec_new.push_back(make_pair(new_chars[index], "e"));
+                    flag3 = 1;
                 }
                 else
                 {
@@ -72,11 +76,12 @@ vector<pair<char, string>> remove_left_recursion(vector<pair<char, string>> gram
 
     for (std::vector<pair<char, string>>::const_iterator iter = grammar.begin(); iter != grammar.end(); ++iter)
     {
+        cout << "Loop 2 starts" << endl;
         // std::cout << "First: " << iter->first << ", Second: " << iter->second << std::endl;
         if (done.find(iter->first) == done.end())
         {
             vec_new.push_back(make_pair(iter->first, iter->second));
-            done.insert(iter->first);
+            // done.insert(iter->first);
         }
     }
 
@@ -94,7 +99,7 @@ vector<pair<char, string>> remove_left_recursion(vector<pair<char, string>> gram
 int main()
 {
     vector<pair<char, string>> vec = {
-        {'E', "E+T"}, {'E', "E-T"}, {'E', "T"}, {'T', "T*F"}, {'T', "T/F"}, {'T', "F"}, {'S', "E"}};
+        {'E', "E+T"}, {'E', "E-T"}, {'E', "T"}, {'T', "T*F"}, {'T', "T/F"}, {'T', "F"}, {'S', "E"}, {'F', "n"}, {'F', "i"}, {'F', "(E)"}};
 
     // for (std::vector<pair<int, int>>::const_iterator iter = vec.begin();
     //      iter != vec.end();
@@ -105,7 +110,8 @@ int main()
     // }
 
     auto res = remove_left_recursion(vec);
-    for(auto &&p : res){
+    for (auto &&p : res)
+    {
         cout << p.first << " -> " << p.second << endl;
     }
 

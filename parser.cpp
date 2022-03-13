@@ -1,4 +1,5 @@
-#include<bits/stdc++.h>
+#include <fstream>
+#include <map>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -12,84 +13,103 @@ vector<pair<char, string>> remove_left_recursion(vector<pair<char, string>> gram
 void get_first(const char &non_term, map<char, set<char>> &first, vector<pair<char, string>> &grammar);
 void get_follow(const char &non_term, map<char, set<char>> &first, map<char, set<char>> &follow, vector<pair<char, string>> &grammar);
 
-int main(int argc, char* argv[]){
+int main(int argc, char *argv[])
+{
     vector<pair<char, string>> grammar;
     map<char, set<char>> first, follow;
     set<char> terminals, non_terminals;
 
-    if(argc != 3){
+    if (argc != 3)
+    {
         cout << "Please run the file as ./parser <grammar file> <input string>";
     }
 
     // reading grammar
     fstream grammar_file;
     grammar_file.open(argv[1], ios::in);
-    if(grammar_file.fail()){
+    if (grammar_file.fail())
+    {
         cout << "Could not open grammar file!\n";
         return 1;
     }
 
     cout << "Finished reading grammar : \n";
-    while(!grammar_file.eof()){
+    while (!grammar_file.eof())
+    {
         char buffer[25];
         grammar_file.getline(buffer, 24);
         char lhs = buffer[0];
-        string rhs = buffer+3;
+        string rhs = buffer + 3;
         pair<char, string> prod = make_pair(lhs, rhs);
         grammar.push_back(prod);
         cout << grammar.size() << ". " << prod.first << " -> " << prod.second << endl;
     }
 
+    // eliminating left recursion and left factoring
+    grammar = remove_left_recursion(grammar);
+    cout << "After left recursion : \n";
+    for (auto &&prod : grammar)
+    {
+        cout << prod.first << " -> " << prod.second << endl;
+    }
+
     // segregating terminals and non terminals
-    for(auto &&prod : grammar){
+    for (auto &&prod : grammar)
+    {
         non_terminals.insert(prod.first);
-        for(auto &c : prod.second){
-            if(isupper(c)){
+        for (auto &c : prod.second)
+        {
+            if (isupper(c))
+            {
                 non_terminals.insert(c);
             }
-            else{
+            else
+            {
                 terminals.insert(c);
             }
         }
     }
     terminals.erase('e');
     terminals.insert('$');
-    
-    // eliminating left recursion and left factoring
-    grammar = remove_left_recursion(grammar);
-    cout << "After left recursion : \n";
-    for(auto &&prod : grammar){
-        cout << prod.first << " -> " << prod.second << endl;
-    }
 
     // finding firsts
-    for(char term : terminals){
-        if(first.find(term) == first.end()){
-            get_first(term, first, grammar);
+    for (char non_term : non_terminals)
+    {
+        // cout << non_term << " ";
+        if (first.find(non_term) == first.end())
+        {
+            get_first(non_term, first, grammar);
         }
     }
+    // cout << endl;
 
     cout << "Firsts are : \n";
-    for(auto &&p : first){
+    for (auto &&p : first)
+    {
         cout << p.first << " : ";
-        for(auto &c : p.second){
+        for (auto &c : p.second)
+        {
             cout << c << " ";
         }
         cout << endl;
     }
 
     // finding follows
-    follow[grammar.begin()->first].insert('$');
-    for(char non_term : non_terminals){
-        if(follow.find(non_term) == follow.end()){
+    follow['S'].insert('$');
+    for (char non_term : non_terminals)
+    {
+        if (follow.find(non_term) == follow.end())
+        {
             get_follow(non_term, first, follow, grammar);
         }
     }
 
     cout << "Follows are : \n";
-    for(char c : non_terminals){
+    for (char c : non_terminals)
+    {
         cout << c << " : ";
-        for(char ele : follow[c]){
+        for (char ele : follow[c])
+        {
             cout << ele << " ";
         }
         cout << endl;
@@ -107,7 +127,7 @@ vector<pair<char, string>> remove_left_recursion(vector<pair<char, string>> gram
     int index = 0;
     while (true)
     {
-        cout << "Loop start" << endl;
+        // cout << "Loop start" << endl;
 
         char flag;
         for (std::vector<pair<char, string>>::const_iterator iter = grammar.begin(); iter != grammar.end(); ++iter)
@@ -127,6 +147,7 @@ vector<pair<char, string>> remove_left_recursion(vector<pair<char, string>> gram
 
         int flag2 = 0;
         int j = 0;
+        int flag3 = 0;
         for (std::vector<pair<char, string>>::const_iterator iter = grammar.begin(); iter != grammar.end(); ++iter)
         {
             // std::cout << "First: " << iter->first << ", Second: " << iter->second << std::endl;
@@ -138,6 +159,10 @@ vector<pair<char, string>> remove_left_recursion(vector<pair<char, string>> gram
                     // cout << 'X' << iter->second.substr(1, iter->second.size() - 1) + 'X' << endl;
                     // grammar.erase(grammar.begin() + index);
                     // erase the original rule
+
+                    if (flag3 == 0)
+                        vec_new.push_back(make_pair(new_chars[index], "e"));
+                    flag3 = 1;
                 }
                 else
                 {
@@ -166,71 +191,103 @@ vector<pair<char, string>> remove_left_recursion(vector<pair<char, string>> gram
         if (done.find(iter->first) == done.end())
         {
             vec_new.push_back(make_pair(iter->first, iter->second));
-            done.insert(iter->first);
+            // done.insert(iter->first);
         }
     }
 
-    cout << "@@@@@@@@" << endl;
-    for (std::vector<pair<char, string>>::const_iterator iter = vec_new.begin(); iter != vec_new.end(); ++iter)
-    {
-        std::cout << "First: " << iter->first << ", Second: " << iter->second << std::endl;
-    }
+    // cout << "@@@@@@@@" << endl;
+    // for (std::vector<pair<char, string>>::const_iterator iter = vec_new.begin(); iter != vec_new.end(); ++iter)
+    // {
+    //     std::cout << "First: " << iter->first << ", Second: " << iter->second << std::endl;
+    // }
 
     // for (auto it = done.begin(); it != done.end(); ++it)
     //     cout << ' ' << *it;
     return vec_new;
 }
 
-void get_first(const char &non_term, map<char, set<char>> &first, vector<pair<char, string>> &grammar){
-    for(auto &&prod : grammar){
-        if(prod.first == non_term){
-            for(auto &c : prod.second){
+void get_first(const char &non_term, map<char, set<char>> &first, vector<pair<char, string>> &grammar)
+{
+    for (auto &&prod : grammar)
+    {
+        if (prod.first == non_term)
+        {
+            for (auto &c : prod.second)
+            {
                 bool eps = 0;
-                if(islower(c)){
+                if (c < 'A' || c > 'Z')
+                {
                     first[prod.first].insert(c);
                 }
-                else{
-                    if(first.find(c) == first.end()){
+                else
+                {
+                    if (first.find(c) == first.end())
+                    {
                         get_first(c, first, grammar);
                     }
-                    for(char term : first[c]){
-                        if(term == 'e') eps = 1;
+                    for (char term : first[c])
+                    {
+                        if (term == 'e')
+                            eps = 1;
                         first[prod.first].insert(term);
                     }
                 }
-                if(islower(c) || !eps) break;
+                if (islower(c) || !eps)
+                    break;
             }
         }
     }
 }
 
-void get_follow(const char &non_term, map<char, set<char>> &first, map<char, set<char>> &follow, vector<pair<char, string>> &grammar){
-    for(auto &&prod : grammar){
+void get_follow(const char &non_term, map<char, set<char>> &first, map<char, set<char>> &follow, vector<pair<char, string>> &grammar)
+{
+    for (auto &&prod : grammar)
+    {
         int start = 0;
-        while(start < prod.second.length() && (start = prod.second.find(non_term, start)) != string::npos){
-            for(int i = start+1; i < prod.second.length(); ++i, ++start){
-                char curr = prod.second[i];
+        int idx = 0;
+        bool consider = 0;
+        for (; idx < prod.second.length(); ++idx)
+        {
+            if (prod.second[idx] == non_term)
+            {
+                consider = 1;
+            }
+            else if (consider)
+            {
+                char curr = prod.second[idx];
                 bool eps = 0;
-                if(islower(curr)){
+                if (curr < 'A' || curr > 'Z')
+                {
                     follow[non_term].insert(curr);
                 }
-                else{
-                    for(char c : first[curr]){
-                        if(c == 'e') eps = 1;
-                        else follow[non_term].insert(c);
+                else
+                {
+                    for (char c : first[curr])
+                    {
+                        if (c == 'e')
+                            eps = 1;
+                        else
+                            follow[non_term].insert(c);
                     }
                 }
-                if(islower(curr) || !eps) break;
-            }
-            if(start == prod.second.length()){
-                if(follow.find(prod.first) == follow.end()){
-                    get_follow(prod.first, first, follow, grammar);
-                }
-                for(char c : follow[prod.first]){
-                    follow[non_term].insert(c);
+                if (curr < 'A' || curr > 'Z' || !eps)
+                {
+                    consider = 0;
                 }
             }
-            ++start;
+        }
+        if (idx == prod.second.length() && consider)
+        {
+            if (prod.first == non_term)
+                continue;
+            if (follow.find(prod.first) == follow.end())
+            {
+                get_follow(prod.first, first, follow, grammar);
+            }
+            for (char c : follow[prod.first])
+            {
+                follow[non_term].insert(c);
+            }
         }
     }
 }
