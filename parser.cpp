@@ -6,9 +6,11 @@
 #include <set>
 #include <array>
 #include <utility>
+#include <regex>
 
 using namespace std;
 
+string tokenize(string input);
 vector<pair<char, string>> remove_left_recursion(vector<pair<char, string>> grammar);
 void get_first(const char &non_term, map<char, set<char>> &first, vector<pair<char, string>> &grammar);
 void get_follow(const char &non_term, map<char, set<char>> &first, map<char, set<char>> &follow, vector<pair<char, string>> &grammar);
@@ -18,10 +20,17 @@ int main(int argc, char *argv[])
     vector<pair<char, string>> grammar;
     map<char, set<char>> first, follow;
     set<char> terminals, non_terminals;
+    string input;
 
     if (argc != 3)
     {
         cout << "Please run the file as ./parser <grammar file> <input string>";
+    }
+    // tokenizing string
+    input = tokenize(argv[2]);
+    if(input == ""){
+        cout << "Illegal expression!" << endl;
+        return 3;
     }
 
     // reading grammar
@@ -114,7 +123,81 @@ int main(int argc, char *argv[])
         }
         cout << endl;
     }
+
+    // predictive parsing table
+    vector<vector<int>> parsing_table(non_terminals.size(), vector<int>(terminals.size(), -1));
+    for(int i = 0; i < grammar.size(); ++i){
+        string rhs = grammar[i].second;
+        char lhs = grammar[i].first;
+        set<int> yield;
+        bool early_exit = 0;
+        for(char c : rhs){
+            bool eps = 0;
+            if(c < 'A' || c > 'Z'){
+                yield.insert(c);
+            }
+            else{
+                yield.insert(first[c].begin(), first[c].end());
+            }
+            if(c < 'A' || c > 'Z' || !eps){
+                early_exit = 1;
+                break;
+            }
+        }
+        if(!early_exit){
+            yield.insert(follow[lhs].begin(), follow[lhs].end());
+        }
+        for(char c : yield){
+            int row = distance(non_terminals.begin(), non_terminals.find(lhs));
+            int col = distance(terminals.begin(), terminals.find(c));
+            if(parsing_table[row][col] != -1){
+                cout << "Ambiguous grammar!\n2 or more productions in entry table[" << lhs << "][" << c << "]\n";
+                return 2;
+            }
+            parsing_table[row][col] = i;
+        }
+    }
+
     return 0;
+}
+
+string tokenize(string input){
+    regex id("[a-zA-Z_][a-zA-Z_0-9]*"), num("[0-9]+"), newline("\n");
+    regex operators("[+-/*()]");
+    string res, curr;
+    stringstream ss_input(input);
+    while(getline(ss_input, curr, ' ')){
+        if(curr == "") continue;
+        smatch m;
+        regex_match(curr, m, operators);
+        if(m.length() != 0){
+            res += m.str();
+            // cout << m.str() << endl;
+            continue;
+        }
+        regex_match(curr, m, id);
+        if(m.length() != 0){
+            res += 'i';
+            // cout << m.str() << endl;
+            continue;
+        }
+        regex_match(curr, m, num);
+        if(m.length() != 0){
+            res += 'n';
+            // cout << m.str() << endl;
+            continue;
+        }
+        regex_match(curr, m, newline);
+        if(m.length() != 0){
+            continue;
+        }
+        if(m.length() == 0){
+            cout << "Unable to tokenize string..." << endl;
+            return "";
+        }
+    }
+    cout << "Tokenized string : " << res << endl;
+    return res;
 }
 
 vector<pair<char, string>> remove_left_recursion(vector<pair<char, string>> grammar)
