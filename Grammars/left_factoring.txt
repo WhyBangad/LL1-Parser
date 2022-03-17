@@ -1,0 +1,4 @@
+Q->E
+E->iEtS
+E->iEtSgS
+S->a
