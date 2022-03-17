@@ -37,17 +37,6 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    cout << "Enter the input string : ";
-    cin >> input;
-
-    // tokenizing string
-    input = tokenize(input);
-    if (input == "")
-    {
-        cout << "Illegal expression!" << endl;
-        return 3;
-    }
-
     // reading grammar
     fstream grammar_file;
     grammar_file.open(argv[1], ios::in);
@@ -94,6 +83,11 @@ int main(int argc, char *argv[])
     {
         return -1;
     }
+    // re-finding non terminals
+    non_terminals.clear();
+    for (auto &&prod : grammar)
+        non_terminals.insert(prod.first);
+
     grammar = remove_left_factoring(grammar, non_terminals);
     cout << "\nAfter removing left recursion and left factoring : \n";
     for (int i = 0; i < grammar.size(); ++i)
@@ -154,6 +148,18 @@ int main(int argc, char *argv[])
     if (parsing_table.size() == 0)
         return 1;
     print_table(parsing_table, terminals, non_terminals);
+
+    // User's string
+    cout << "Enter the input string : ";
+    getline(cin, input);
+
+    // tokenizing string
+    input = tokenize(input);
+    if (input == "")
+    {
+        cout << "Illegal expression!" << endl;
+        return 3;
+    }
 
     if (!parse(parsing_table, input, grammar, terminals, non_terminals))
     {
@@ -465,7 +471,6 @@ bool parse(vector<vector<int>> &table, string &input, vector<pair<char, string>>
     while (index < input.length())
     {
         char c = input[index];
-        // cout << states.top() << " " << c << endl;
         if (c == '$' && states.top() == '$')
         {
             return 1;
@@ -530,10 +535,6 @@ vector<pair<char, string>> remove_left_factoring_helper(vector<pair<char, string
             {
                 if (iter2->first == charflag && iter2 != iter && longest_common_prefix(iter->second, iter2->second) > 0)
                 {
-                    int sa = longest_common_prefix(iter->second, iter2->second);
-                    vec.push_back(make_pair(iter->first, iter->second.substr(0, sa) + new_char));
-                    vec.push_back(make_pair(new_char, iter->second.substr(sa)));
-                    vec.push_back(make_pair(new_char, iter2->second.substr(sa)));
                     for (auto iter3 = grammar.begin(); iter3 != grammar.end(); ++iter3)
                     {
                         if (iter3 != iter && iter3 != iter2)
@@ -541,6 +542,10 @@ vector<pair<char, string>> remove_left_factoring_helper(vector<pair<char, string
                             vec.push_back(make_pair(iter3->first, iter3->second));
                         }
                     }
+                    int sa = longest_common_prefix(iter->second, iter2->second);
+                    vec.push_back(make_pair(iter->first, iter->second.substr(0, sa) + new_char));
+                    vec.push_back(make_pair(new_char, (sa == iter->second.length() ? "e" : iter->second.substr(sa))));
+                    vec.push_back(make_pair(new_char, (sa == iter2->second.length() ? "e" : iter2->second.substr(sa))));
                     flag = 0;
                     break;
                 }
@@ -565,11 +570,12 @@ vector<pair<char, string>> remove_left_factoring(vector<pair<char, string>> gram
     // int flag2 = 1;
     int ind = 0;
     char charflag;
-    // set<char> new_chars;
-    // for(char c = 'A'; c <= 'Z'; ++c) new_chars.insert(c);
-    // for(char c : non_terms) new_chars.erase(c);
-    char new_chars[3] = {'P', 'Q', 'R'};
+    set<char> new_chars;
+    for(char c = 'A'; c <= 'Z'; ++c) new_chars.insert(c);
+    for(char c : non_terms) new_chars.erase(c);
     vector<pair<char, string>> new_gra;
+    auto start = *grammar.begin();
+    grammar.erase(grammar.begin());
 
     while (flag == 1)
     {
@@ -594,7 +600,8 @@ vector<pair<char, string>> remove_left_factoring(vector<pair<char, string>> gram
                     charflag = iter->first;
                     flag = 1;
                     // cout << "Calling remove_left_factoring_helper" << endl;
-                    new_gra = remove_left_factoring_helper(grammar, charflag, new_chars[ind]);
+                    new_gra = remove_left_factoring_helper(grammar, charflag, *new_chars.begin());
+                    new_chars.erase(new_chars.begin());
                     ind++;
                     break;
                 }
@@ -608,7 +615,7 @@ vector<pair<char, string>> remove_left_factoring(vector<pair<char, string>> gram
         }
         if (flag == 0)
         {
-            return grammar;
+            break;
         }
         grammar = new_gra;
     }
@@ -618,6 +625,7 @@ vector<pair<char, string>> remove_left_factoring(vector<pair<char, string>> gram
     // {
     //     std::cout << "First: " << iter->first << ", Second: " << iter->second << std::endl;
     // }
-
+    new_gra.push_back(start);
+    reverse(new_gra.begin(), new_gra.end());
     return new_gra;
 }
