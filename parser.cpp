@@ -1,7 +1,15 @@
 #include <fstream>
 #include <iostream>
 #include <regex>
-#include<bits/stdc++.h>
+#include <iostream>
+#include <string>
+#include <vector>
+#include <set>
+#include <array>
+#include <utility>
+#include <sstream>
+#include <map>
+#include <stack>
 
 using namespace std;
 
@@ -34,7 +42,8 @@ int main(int argc, char *argv[])
 
     // tokenizing string
     input = tokenize(input);
-    if(input == ""){
+    if (input == "")
+    {
         cout << "Illegal expression!" << endl;
         return 3;
     }
@@ -81,19 +90,21 @@ int main(int argc, char *argv[])
 
     // eliminating left recursion and left factoring
     grammar = remove_left_recursion(grammar, non_terminals);
-    if(grammar.size() == 0){
+    if (grammar.size() == 0)
+    {
         return -1;
     }
     grammar = remove_left_factoring(grammar, non_terminals);
     cout << "\nAfter removing left recursion and left factoring : \n";
     for (int i = 0; i < grammar.size(); ++i)
     {
-        cout << i+1 << ". " << grammar[i].first << " -> " << grammar[i].second << endl;
+        cout << i + 1 << ". " << grammar[i].first << " -> " << grammar[i].second << endl;
     }
 
     // re-finding non terminals
     non_terminals.clear();
-    for (auto &&prod : grammar) non_terminals.insert(prod.first);
+    for (auto &&prod : grammar)
+        non_terminals.insert(prod.first);
 
     // finding firsts
     for (char non_term : non_terminals)
@@ -140,50 +151,61 @@ int main(int argc, char *argv[])
 
     // predictive parsing table
     auto parsing_table = get_parsing_table(grammar, first, follow, terminals, non_terminals);
-    if(parsing_table.size() == 0) return 1;
-    print_table(parsing_table, terminals, non_terminals);    
+    if (parsing_table.size() == 0)
+        return 1;
+    print_table(parsing_table, terminals, non_terminals);
 
-    if(!parse(parsing_table, input, grammar, terminals, non_terminals)){
+    if (!parse(parsing_table, input, grammar, terminals, non_terminals))
+    {
         cout << "Invalid expression!\n";
     }
-    else{
+    else
+    {
         cout << "\nValid expression!\n";
     }
     return 0;
 }
 
-string tokenize(string input){
+string tokenize(string input)
+{
     regex id("[a-zA-Z_][a-zA-Z_0-9]*"), num("[0-9]+"), newline("[\r\n]");
     regex operators("[+-/*()]");
     string res, curr;
     stringstream ss_input(input);
-    while(getline(ss_input, curr, ' ')){
-        if(curr == "") continue;
+    while (getline(ss_input, curr, ' '))
+    {
+        if (curr == "")
+            continue;
         smatch m;
         regex_match(curr, m, operators);
-        if(m.length() != 0){
+        if (m.length() != 0)
+        {
             res += m.str();
             // cout << m.str() << endl;
             continue;
         }
         regex_match(curr, m, id);
-        if(m.length() != 0){
+        if (m.length() != 0)
+        {
             res += 'i';
             // cout << m.str() << endl;
             continue;
         }
         regex_match(curr, m, num);
-        if(m.length() != 0){
+        if (m.length() != 0)
+        {
             res += 'n';
             // cout << m.str() << endl;
             continue;
         }
         regex_match(curr, m, newline);
-        if(m.length() != 0){
+        if (m.length() != 0)
+        {
             continue;
         }
         cout << curr << endl;
-        if(m.length() == 0){
+        if (m.length() == 0)
+        {
             cout << "Unable to tokenize string..." << endl;
             return "";
         }
@@ -192,22 +214,29 @@ string tokenize(string input){
     return res;
 }
 
-vector<pair<char, string>> remove_left_recursion(vector<pair<char, string>> &grammar, const set<char> &non_term){
+vector<pair<char, string>> remove_left_recursion(vector<pair<char, string>> &grammar, const set<char> &non_term)
+{
     // characters that can be used
     set<char> usable;
     // mapping of characters to those that have been used in their left recursion elimination
     map<char, char> used;
     vector<pair<char, string>> new_grammar;
-    
-    for(char c = 'A'; c <= 'Z'; ++c) usable.insert(c);
-    for(char c : non_term) usable.erase(c);
-    for(auto &&prod : grammar){
+
+    for (char c = 'A'; c <= 'Z'; ++c)
+        usable.insert(c);
+    for (char c : non_term)
+        usable.erase(c);
+    for (auto &&prod : grammar)
+    {
         char lhs = prod.first;
         string rhs = prod.second;
-        if(used.find(lhs) != used.end()) continue;
-        if(lhs == rhs[0]){
+        if (used.find(lhs) != used.end())
+            continue;
+        if (lhs == rhs[0])
+        {
             // left recursion
-            if(usable.empty()){
+            if (usable.empty())
+            {
                 fprintf(stderr, "No characters remaining to substitute for left recursions!\n");
                 return vector<pair<char, string>>{};
             }
@@ -216,33 +245,39 @@ vector<pair<char, string>> remove_left_recursion(vector<pair<char, string>> &gra
             usable.erase(usable.begin());
             used[lhs] = to_use;
             new_grammar.push_back({to_use, "e"});
-            for(auto &&m_prod : grammar){
-                // E -> E+T | T 
+            for (auto &&m_prod : grammar)
+            {
+                // E -> E+T | T
                 // yields
-                // E -> TV 
+                // E -> TV
                 // V -> +TV | e
-                if(m_prod.first == lhs){
+                if (m_prod.first == lhs)
+                {
                     rhs = m_prod.second;
                     string new_rhs;
-                    if(lhs == rhs[0]){
+                    if (lhs == rhs[0])
+                    {
                         new_rhs = rhs.substr(1) + used[lhs];
                         new_grammar.push_back({used[lhs], new_rhs});
                     }
-                    else{
+                    else
+                    {
                         terminator = 1;
                         new_rhs = rhs + to_use;
                         new_grammar.push_back({lhs, new_rhs});
                     }
                 }
             }
-            if(!terminator){
+            if (!terminator)
+            {
                 // Can't remove this left recursion
                 // Grammar is not LL(1)
                 fprintf(stderr, "Left recursion of %c does not have a terminator and can't be eliminated!\n", lhs);
                 return vector<pair<char, string>>{};
             }
         }
-        else{
+        else
+        {
             new_grammar.push_back(prod);
         }
     }
@@ -335,43 +370,55 @@ void get_follow(const char &non_term, map<char, set<char>> &first, map<char, set
     }
 }
 
-vector<vector<int>> get_parsing_table(vector<pair<char, string>> &grammar, map<char, set<char>> &first, map<char, set<char>> &follow, set<char> &terminals, set<char> &non_terminals){
+vector<vector<int>> get_parsing_table(vector<pair<char, string>> &grammar, map<char, set<char>> &first, map<char, set<char>> &follow, set<char> &terminals, set<char> &non_terminals)
+{
     vector<vector<int>> parsing_table(non_terminals.size(), vector<int>(terminals.size(), -1));
-    for(int i = 0; i < grammar.size(); ++i){
+    for (int i = 0; i < grammar.size(); ++i)
+    {
         string rhs = grammar[i].second;
         char lhs = grammar[i].first;
         set<int> yield;
         bool early_exit = 0;
-        if(rhs != "e"){
-            for(char c : rhs){
+        if (rhs != "e")
+        {
+            for (char c : rhs)
+            {
                 bool eps = 0;
-                if(c == 'e') continue;
-                if(c < 'A' || c > 'Z'){
+                if (c == 'e')
+                    continue;
+                if (c < 'A' || c > 'Z')
+                {
                     yield.insert(c);
                     early_exit = 1;
                     break;
                 }
-                else{
+                else
+                {
                     yield.insert(first[c].begin(), first[c].end());
                     eps = (first[c].find('e') != first[c].end());
-                    if(eps) yield.erase('e');
-                    else{
+                    if (eps)
+                        yield.erase('e');
+                    else
+                    {
                         early_exit = 1;
                         break;
                     }
                 }
             }
         }
-        if(!early_exit){
+        if (!early_exit)
+        {
             yield.insert(follow[lhs].begin(), follow[lhs].end());
         }
         // cout << "CHAR : " << lhs << endl;
         // cout << "YIELD : ";
-        for(char c : yield){
+        for (char c : yield)
+        {
             // cout << c << " ";
             int row = distance(non_terminals.begin(), non_terminals.find(lhs));
             int col = distance(terminals.begin(), terminals.find(c));
-            if(parsing_table[row][col] != -1){
+            if (parsing_table[row][col] != -1)
+            {
                 cout << "Ambiguous grammar!\n2 or more productions in entry table[" << lhs << "][" << c << "]\n";
                 return vector<vector<int>>{};
             }
@@ -382,57 +429,72 @@ vector<vector<int>> get_parsing_table(vector<pair<char, string>> &grammar, map<c
     return parsing_table;
 }
 
-void print_table(vector<vector<int>> &table, set<char> &terminals, set<char> &non_terminals){
+void print_table(vector<vector<int>> &table, set<char> &terminals, set<char> &non_terminals)
+{
     cout << "\nParsing table : \n";
     cout << "  ";
-    for(char c : terminals){
+    for (char c : terminals)
+    {
         cout << c << " ";
     }
     cout << "\n";
     auto it = non_terminals.begin();
-    for(int i = 0; i < table.size(); ++i){
+    for (int i = 0; i < table.size(); ++i)
+    {
         cout << *it;
-        for(int j = 0; j < table[i].size(); ++j){
-            if(table[i][j] == -1) cout << " -";
-            else cout << " " << table[i][j]+1;
+        for (int j = 0; j < table[i].size(); ++j)
+        {
+            if (table[i][j] == -1)
+                cout << " -";
+            else
+                cout << " " << table[i][j] + 1;
         }
         cout << "\n";
         ++it;
     }
 }
 
-bool parse(vector<vector<int>> &table, string &input, vector<pair<char, string>> &grammar, set<char> &terms, set<char> &non_terms){
+bool parse(vector<vector<int>> &table, string &input, vector<pair<char, string>> &grammar, set<char> &terms, set<char> &non_terms)
+{
     stack<char> states;
     states.push('$');
     states.push('S');
     input += '$';
     // cout << "PARSING\n\n";
     int index = 0;
-    while(index < input.length()){
+    while (index < input.length())
+    {
         char c = input[index];
         // cout << states.top() << " " << c << endl;
-        if(c == '$' && states.top() == '$'){
+        if (c == '$' && states.top() == '$')
+        {
             return 1;
         }
-        else if(states.size() == 1){
+        else if (states.size() == 1)
+        {
             return 0;
         }
-        else if(states.top() == c){
+        else if (states.top() == c)
+        {
             states.pop();
             ++index;
         }
-        else{
+        else
+        {
             int row = distance(non_terms.begin(), non_terms.find(states.top()));
             int col = distance(terms.begin(), terms.find(c));
-            if(table[row][col] == -1){
+            if (table[row][col] == -1)
+            {
                 cout << "\nParsing reached empty table entry!" << endl;
                 return 0;
             }
             states.pop();
             string rhs = grammar[table[row][col]].second;
             reverse(rhs.begin(), rhs.end());
-            if(rhs != "e"){
-                for(char c : rhs){
+            if (rhs != "e")
+            {
+                for (char c : rhs)
+                {
                     states.push(c);
                 }
             }
@@ -444,8 +506,10 @@ bool parse(vector<vector<int>> &table, string &input, vector<pair<char, string>>
 int longest_common_prefix(const string &s1, const string &s2)
 {
     int cnt = 0;
-    for(int i = 0; i < min(s1.length(), s2.length()); ++i){
-        if(s1[i] != s2[i]) break;
+    for (int i = 0; i < min(s1.length(), s2.length()); ++i)
+    {
+        if (s1[i] != s2[i])
+            break;
         ++cnt;
     }
     return cnt;
@@ -541,6 +605,10 @@ vector<pair<char, string>> remove_left_factoring(vector<pair<char, string>> gram
             }
             if (flag == 1)
                 break;
+        }
+        if (flag == 0)
+        {
+            return grammar;
         }
         grammar = new_gra;
     }

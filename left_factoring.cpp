@@ -114,6 +114,10 @@ vector<pair<char, string>> remove_left_factoring(vector<pair<char, string>> gram
             if (flag == 1)
                 break;
         }
+        if (flag == 0)
+        {
+            return grammar;
+        }
         grammar = new_gra;
     }
 
