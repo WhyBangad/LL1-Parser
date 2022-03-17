@@ -128,7 +128,7 @@ vector<pair<char, string>> remove_left_factoring(vector<pair<char, string>> gram
 
 int main()
 {
-    vector<pair<char, string>> vec = {{'E', "abF"}, {'E', "abcF"}, {'E', "abcdF"}, {'E', "abcdeF"}};
+    vector<pair<char, string>> vec = {{'E', "a"}, {'E', "b"}, {'E', "c"}, {'E', "d"}};
 
     for (std::vector<pair<char, string>>::const_iterator iter = vec.begin(); iter != vec.end(); ++iter)
     {
